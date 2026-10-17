@@ -1,196 +1,186 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gridiron — NFL & College Football Tracker</title>
-    <meta name="description" content="Live NFL and College Football game tracker: full-season schedule, real-time scores, and calendar view." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./base.css" />
-    <link rel="stylesheet" href="./style.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23041421'/%3E%3Cpath d='M16 6l3.5 4.2-2.6 5 2.6 5L16 24.4 12.5 20.2l2.6-5-2.6-5z' fill='%2334d27c'/%3E%3C/svg%3E"
-    />
-  </head>
-  <body>
-    <a class="skip-link" href="#app-content">Skip to content</a>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gridiron - Football Scores</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent: #0078d4;
+            --favorite-bg: #1a2a3a;
+            --favorite-border: #0078d4;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .dashboard { max-width: 1200px; margin: auto; }
+        h1, h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; }
+        .card.favorite { border: 1px solid var(--favorite-border); background-color: var(--favorite-bg); }
+        .team { display: flex; justify-content: space-between; margin: 10px 0; align-items: center; }
+        .team img { width: 30px; height: 30px; margin-right: 15px; object-fit: contain; }
+        .team-info { display: flex; align-items: center; font-weight: 500; }
+        .team-record { font-size: 0.85em; color: var(--text-muted); margin-left: 8px; font-weight: normal; }
+        .score { font-weight: bold; font-size: 1.3em; }
+        .status { font-size: 0.85em; color: var(--text-muted); text-align: center; margin-top: 10px; font-weight: 600; }
+        .meta-info { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.8em; 
+            color: var(--text-muted); 
+            margin-top: 15px; 
+            border-top: 1px solid #333; 
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="login-screen" hidden>
-      <div class="login-panel">
-        <svg class="login-logo" viewBox="0 0 32 32" aria-hidden="true">
-          <rect width="32" height="32" rx="7" fill="currentColor" />
-          <path d="M16 6l3.5 4.2-2.6 5 2.6 5L16 24.4 12.5 20.2l2.6-5-2.6-5z" fill="var(--color-bg)" />
-        </svg>
-        <h1 class="login-title">Gridiron Sign In</h1>
-        <p class="login-desc">Enter the passcode to access live scores and schedules.</p>
-        <form id="login-form" class="login-form">
-          <input type="password" id="login-password" placeholder="Enter passcode" required />
-          <button type="submit" class="login-btn">Unlock</button>
-          <p id="login-error" class="login-error" hidden>Incorrect passcode.</p>
-        </form>
-      </div>
+<div class="dashboard">
+    <div id="scoreboard-container">
+        <h1>Gridiron Scoreboard</h1>
+        
+        <h2>Favorites</h2>
+        <div id="favorites-grid" class="grid"></div>
+
+        <h2>NFL</h2>
+        <div id="nfl-grid" class="grid"></div>
+
+        <h2>NCAA (FBS)</h2>
+        <div id="ncaa-grid" class="grid"></div>
     </div>
+</div>
 
-    <!-- Main App Content (Hidden until logged in) -->
-    <div id="app-content" hidden>
-      <header class="app-header">
-        <div class="app-header__inner">
-          <a class="brand" href="#" aria-label="Gridiron home">
-            <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-              <rect width="32" height="32" rx="7" fill="currentColor" />
-              <path
-                d="M16 6l3.5 4.2-2.6 5 2.6 5L16 24.4 12.5 20.2l2.6-5-2.6-5z"
-                fill="var(--color-bg)"
-              />
-            </svg>
-            <span class="brand__name">Gridiron</span>
-          </a>
+<script>
+    // Pinned Teams
+    const FAVORITE_TEAMS = ["Carolina Panthers", "Clemson Tigers"];
+    
+    // ESPN API Endpoints
+    const ENDPOINTS = {
+        nfl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        ncaa: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80'
+    };
 
-          <!-- Sport Selector Header Navigation Tab -->
-          <nav class="sport-nav" aria-label="League mode">
-            <button class="sport-nav__btn is-active" data-league-tab="nfl" type="button">NFL</button>
-            <button class="sport-nav__btn" data-league-tab="cfb" type="button">College Football</button>
-          </nav>
+    async function fetchScores() {
+        try {
+            const [nflRes, ncaaRes] = await Promise.all([
+                fetch(ENDPOINTS.nfl),
+                fetch(ENDPOINTS.ncaa)
+            ]);
+            
+            const nflData = await nflRes.json();
+            const ncaaData = await ncaaRes.json();
+            
+            renderGames(nflData.events || [], ncaaData.events || []);
+        } catch (error) {
+            console.error('Error fetching ESPN API data:', error);
+        }
+    }
 
-          <div class="app-header__meta">
-            <span class="season-tag">2026 Season</span>
-            <button class="theme-toggle" data-theme-toggle aria-label="Switch to light mode" type="button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            </button>
-            <button class="logout-btn" data-logout-btn aria-label="Logout" type="button">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-            </button>
-          </div>
-        </div>
-      </header>
+    function createGameCard(game, isFavorite = false) {
+        const comp = game.competitions[0];
+        const home = comp.competitors.find(c => c.homeAway === 'home');
+        const away = comp.competitors.find(c => c.homeAway === 'away');
+        const status = game.status.type.detail;
+        
+        const getScore = (team) => team.score || '0';
+        const getLogo = (team) => team.team.logo || '';
+        
+        // Extract Win/Loss Record
+        const getRecord = (team) => {
+            if (team.records && team.records.length > 0) {
+                return `(${team.records[0].summary})`;
+            }
+            return '';
+        };
 
-      <main class="container">
-        <section class="live-section" aria-labelledby="live-heading">
-          <div class="section-head">
-            <h1 id="live-heading" class="section-title">Live &amp; Recent</h1>
-            <span class="updated-pill" data-updated hidden>
-              <span class="dot dot--live"></span>
-              <span data-updated-text>Updated</span>
-            </span>
-          </div>
-          <div class="live-grid" data-live-grid>
-            <p class="placeholder-line" data-live-placeholder>Loading live games…</p>
-          </div>
-        </section>
+        // Extract TV Network
+        let tvNetwork = 'N/A';
+        if (comp.broadcasts && comp.broadcasts.length > 0 && comp.broadcasts[0].names) {
+            tvNetwork = comp.broadcasts[0].names.join(', ');
+        }
 
-        <section class="controls" aria-label="Filters and view">
-          <div class="control control--team">
-            <label for="team-filter">Team</label>
-            <div class="select-wrap">
-              <select id="team-filter" data-team-filter>
-                <option value="ALL">All Teams</option>
-              </select>
-              <svg class="select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" />
-              </svg>
+        // Extract Betting Odds
+        let oddsStr = 'N/A';
+        if (comp.odds && comp.odds.length > 0) {
+            const spread = comp.odds[0].details || '';
+            const ou = comp.odds[0].overUnder ? `(O/U: ${comp.odds[0].overUnder})` : '';
+            oddsStr = `${spread} ${ou}`.trim() || 'N/A';
+        }
+        
+        return `
+            <div class="card ${isFavorite ? 'favorite' : ''}">
+                <div class="team">
+                    <div class="team-info">
+                        <img src="${getLogo(away)}" alt="${away.team.displayName}" onerror="this.style.display='none'">
+                        <span>${away.team.displayName} <span class="team-record">${getRecord(away)}</span></span>
+                    </div>
+                    <span class="score">${getScore(away)}</span>
+                </div>
+                <div class="team">
+                    <div class="team-info">
+                        <img src="${getLogo(home)}" alt="${home.team.displayName}" onerror="this.style.display='none'">
+                        <span>${home.team.displayName} <span class="team-record">${getRecord(home)}</span></span>
+                    </div>
+                    <span class="score">${getScore(home)}</span>
+                </div>
+                <div class="status">${status}</div>
+                <div class="meta-info">
+                    <span>📺 ${tvNetwork}</span>
+                    <span>🎲 ${oddsStr}</span>
+                </div>
             </div>
-          </div>
+        `;
+    }
 
-          <div class="control control--view">
-            <span class="control__label">View</span>
-            <div class="seg" role="tablist" aria-label="View mode">
-              <button class="seg__btn is-active" role="tab" aria-selected="true" data-view="calendar">Calendar</button>
-              <button class="seg__btn" role="tab" aria-selected="false" data-view="list">List</button>
-              <button class="seg__btn" role="tab" aria-selected="false" data-view="standings" data-standings-tab>Standings</button>
-            </div>
-          </div>
+    function renderGames(nflGames, ncaaGames) {
+        const favoritesEl = document.getElementById('favorites-grid');
+        const nflEl = document.getElementById('nfl-grid');
+        const ncaaEl = document.getElementById('ncaa-grid');
+        
+        let favoritesHtml = '';
+        let nflHtml = '';
+        let ncaaHtml = '';
 
-          <div class="control control--phase" data-phase-filter hidden>
-            <span class="control__label">Phase</span>
-            <div class="chips" role="group" aria-label="Season phase" data-phase-container>
-              <button class="chip is-active" data-phase="all">All</button>
-              <button class="chip" data-phase="1" data-phase-pre>Preseason</button>
-              <button class="chip" data-phase="2">Regular</button>
-              <button class="chip" data-phase="3">Postseason</button>
-            </div>
-          </div>
-        </section>
+        const processGame = (game) => {
+            const comp = game.competitions[0];
+            const homeName = comp.competitors.find(c => c.homeAway === 'home').team.displayName;
+            const awayName = comp.competitors.find(c => c.homeAway === 'away').team.displayName;
+            
+            if (FAVORITE_TEAMS.includes(homeName) || FAVORITE_TEAMS.includes(awayName)) {
+                favoritesHtml += createGameCard(game, true);
+                return null; 
+            }
+            return createGameCard(game, false);
+        };
 
-        <!-- Calendar view -->
-        <section class="view view--calendar is-active" data-view-panel="calendar" aria-label="Calendar view">
-          <div class="cal-head">
-            <button class="cal-nav" data-cal-prev aria-label="Previous month">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
-            <h2 class="cal-title" data-cal-title>Month Year</h2>
-            <button class="cal-nav" data-cal-next aria-label="Next month">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
-            </button>
-            <button class="cal-today" data-cal-today>Today</button>
-          </div>
-          <div class="cal-scroll">
-            <div class="cal-weekdays" aria-hidden="true">
-              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-            </div>
-            <div class="cal-grid" data-cal-grid></div>
-          </div>
-        </section>
+        nflGames.forEach(game => {
+            const card = processGame(game);
+            if (card) nflHtml += card;
+        });
 
-        <!-- List view -->
-        <section class="view view--list" data-view-panel="list" aria-label="List view">
-          <div class="list-body" data-list-body></div>
-        </section>
+        ncaaGames.forEach(game => {
+            const card = processGame(game);
+            if (card) ncaaHtml += card;
+        });
 
-        <!-- Standings view -->
-        <section class="view view--standings" data-view-panel="standings" aria-label="Standings view">
-          <div class="standings-body" data-standings-body></div>
-        </section>
-      </main>
+        favoritesEl.innerHTML = favoritesHtml || '<p style="color: var(--text-muted);">No favorite teams playing today.</p>';
+        nflEl.innerHTML = nflHtml;
+        ncaaEl.innerHTML = ncaaHtml;
+    }
 
-      <footer class="app-footer">
-        <p>
-          Live data from
-          <a href="https://www.espn.com/" target="_blank" rel="noopener noreferrer">ESPN</a>.
-          Times shown in your local timezone. Scores auto-refresh every 30 seconds.
-        </p>
-      </footer>
-    </div>
-
-    <div class="game-modal" data-game-modal hidden>
-      <div class="game-modal__backdrop" data-modal-close></div>
-      <div class="game-modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <button class="game-modal__close" data-modal-close aria-label="Close">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
-        </button>
-        <div class="game-modal__content" data-modal-content></div>
-      </div>
-    </div>
-
-    <template id="game-card-tmpl">
-      <article class="game-card" tabindex="0" role="button">
-        <div class="game-card__status" data-status></div>
-        <div class="game-card__body">
-          <div class="team-row" data-away>
-            <img class="team-logo" alt="" data-away-logo />
-            <span class="team-abbr" data-away-abbr></span>
-            <span class="team-name" data-away-name></span>
-            <span class="team-score" data-away-score></span>
-          </div>
-          <div class="team-row" data-home>
-            <img class="team-logo" alt="" data-home-logo />
-            <span class="team-abbr" data-home-abbr></span>
-            <span class="team-name" data-home-name></span>
-            <span class="team-score" data-home-score></span>
-          </div>
-        </div>
-        <div class="game-card__meta" data-meta></div>
-      </article>
-    </template>
-
-    <script src="./app.js" defer></script>
-  </body>
+    // Initialize and set 60-second polling
+    fetchScores();
+    setInterval(fetchScores, 60000);
+</script>
+</body>
 </html>
