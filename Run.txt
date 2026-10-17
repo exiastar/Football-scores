@@ -1,0 +1,6 @@
+docker build -t gridiron-app .
+
+
+docker run -d --name Gridiron -p 8000:8000 gridiron-app
+
+docker run -d --name Gridiron -p 8000:8000 -e APP_PASSWORD=your_custom_password gridiron-app
