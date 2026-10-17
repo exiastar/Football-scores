@@ -11,8 +11,10 @@
             --text-main: #ffffff;
             --text-muted: #a0a0a0;
             --accent: #0078d4;
+            --accent-hover: #005a9e;
             --favorite-bg: #1a2a3a;
             --favorite-border: #0078d4;
+            --border-color: #333;
         }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -22,9 +24,63 @@
             padding: 20px; 
         }
         .dashboard { max-width: 1200px; margin: auto; }
-        h1, h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; }
+        
+        /* Header & Controls */
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+        h1 { margin: 0; font-size: 1.8em; }
+        .date-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="date"] {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            color-scheme: dark;
+            font-family: inherit;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .tab-btn:hover { background-color: #2a2a2a; }
+        .tab-btn.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 10px; font-size: 1.4em; }
+        
+        /* Grid & Cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .card.favorite { border: 1px solid var(--favorite-border); background-color: var(--favorite-bg); }
         .team { display: flex; justify-content: space-between; margin: 10px 0; align-items: center; }
         .team img { width: 30px; height: 30px; margin-right: 15px; object-fit: contain; }
@@ -38,43 +94,90 @@
             font-size: 0.8em; 
             color: var(--text-muted); 
             margin-top: 15px; 
-            border-top: 1px solid #333; 
+            border-top: 1px solid var(--border-color); 
             padding-top: 10px;
         }
+        .no-data { color: var(--text-muted); font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div id="scoreboard-container">
-        <h1>Gridiron Scoreboard</h1>
         
-        <h2>Favorites</h2>
-        <div id="favorites-grid" class="grid"></div>
+        <div class="header-controls">
+            <h1>Gridiron</h1>
+            <div class="date-picker-container">
+                <label for="game-date">Select Date:</label>
+                <input type="date" id="game-date">
+            </div>
+        </div>
+        
+        <div id="favorites-section">
+            <h2>Favorites</h2>
+            <div id="favorites-grid" class="grid"></div>
+        </div>
 
-        <h2>NFL</h2>
-        <div id="nfl-grid" class="grid"></div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('nfl')" id="btn-nfl">NFL</button>
+            <button class="tab-btn" onclick="switchTab('ncaa')" id="btn-ncaa">NCAA (FBS)</button>
+        </div>
 
-        <h2>NCAA (FBS)</h2>
-        <div id="ncaa-grid" class="grid"></div>
+        <div id="tab-nfl" class="tab-content active">
+            <div id="nfl-grid" class="grid"></div>
+        </div>
+
+        <div id="tab-ncaa" class="tab-content">
+            <div id="ncaa-grid" class="grid"></div>
+        </div>
+
     </div>
 </div>
 
 <script>
-    // Pinned Teams
     const FAVORITE_TEAMS = ["Carolina Panthers", "Clemson Tigers"];
+    let pollingInterval;
     
-    // ESPN API Endpoints
-    const ENDPOINTS = {
+    const BASE_ENDPOINTS = {
         nfl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
         ncaa: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80'
     };
 
-    async function fetchScores() {
+    // Initialize Date Picker
+    const dateInput = document.getElementById('game-date');
+    const today = new Date();
+    // Offset for local timezone formatting to ensure picker shows local date
+    const offset = today.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(today - offset)).toISOString().split('T')[0];
+    dateInput.value = localISOTime;
+
+    dateInput.addEventListener('change', (e) => {
+        fetchScores(e.target.value);
+    });
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        document.getElementById(`btn-${tab}`).classList.add('active');
+    }
+
+    async function fetchScores(dateString = null) {
+        let nflUrl = BASE_ENDPOINTS.nfl;
+        let ncaaUrl = BASE_ENDPOINTS.ncaa;
+
+        // Append date parameter if specific date is selected
+        if (dateString) {
+            const espnDate = dateString.replace(/-/g, '');
+            nflUrl += `?dates=${espnDate}`;
+            ncaaUrl += `&dates=${espnDate}`;
+        }
+
         try {
             const [nflRes, ncaaRes] = await Promise.all([
-                fetch(ENDPOINTS.nfl),
-                fetch(ENDPOINTS.ncaa)
+                fetch(nflUrl),
+                fetch(ncaaUrl)
             ]);
             
             const nflData = await nflRes.json();
@@ -95,7 +198,6 @@
         const getScore = (team) => team.score || '0';
         const getLogo = (team) => team.team.logo || '';
         
-        // Extract Win/Loss Record
         const getRecord = (team) => {
             if (team.records && team.records.length > 0) {
                 return `(${team.records[0].summary})`;
@@ -103,13 +205,11 @@
             return '';
         };
 
-        // Extract TV Network
         let tvNetwork = 'N/A';
         if (comp.broadcasts && comp.broadcasts.length > 0 && comp.broadcasts[0].names) {
             tvNetwork = comp.broadcasts[0].names.join(', ');
         }
 
-        // Extract Betting Odds
         let oddsStr = 'N/A';
         if (comp.odds && comp.odds.length > 0) {
             const spread = comp.odds[0].details || '';
@@ -173,14 +273,26 @@
             if (card) ncaaHtml += card;
         });
 
-        favoritesEl.innerHTML = favoritesHtml || '<p style="color: var(--text-muted);">No favorite teams playing today.</p>';
-        nflEl.innerHTML = nflHtml;
-        ncaaEl.innerHTML = ncaaHtml;
+        favoritesEl.innerHTML = favoritesHtml || '<p class="no-data">No favorite teams scheduled on this date.</p>';
+        nflEl.innerHTML = nflHtml || '<p class="no-data">No NFL games scheduled on this date.</p>';
+        ncaaEl.innerHTML = ncaaHtml || '<p class="no-data">No NCAA games scheduled on this date.</p>';
     }
 
-    // Initialize and set 60-second polling
-    fetchScores();
-    setInterval(fetchScores, 60000);
+    function startPolling() {
+        // Clear existing interval if date changes
+        if (pollingInterval) clearInterval(pollingInterval);
+        
+        // Initial Fetch
+        fetchScores(dateInput.value);
+        
+        // Poll every 60 seconds
+        pollingInterval = setInterval(() => {
+            fetchScores(dateInput.value);
+        }, 60000);
+    }
+
+    // Initialize application
+    startPolling();
 </script>
 </body>
 </html>
