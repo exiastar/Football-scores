@@ -3,27 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gridiron - Football Scores</title>
+    <title>Gridiron - Premium Analytics</title>
+    
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Teko:wght@500;600&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --accent: #0078d4;
-            --accent-hover: #005a9e;
-            --favorite-bg: #1a2a3a;
-            --favorite-border: #0078d4;
-            --border-color: #333;
+            /* Premium Dark Mode Palette */
+            --bg-color: #0b0e14;
+            --card-bg: #151a23;
+            --card-hover: #1b222d;
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dark: #64748b;
+            
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --accent-hover: #2563eb;
+            
+            --favorite-bg: linear-gradient(145deg, #1a2436 0%, #151a23 100%);
+            --favorite-border: #3b82f6;
+            --border-color: #262f3f;
+            
+            --glass-bg: rgba(21, 26, 35, 0.7);
+            
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Teko', sans-serif;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: var(--font-main); 
             background-color: var(--bg-color); 
             color: var(--text-main); 
             margin: 0; 
-            padding: 20px; 
+            padding: 0; 
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.04), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.04), transparent 25%);
         }
-        .dashboard { max-width: 1200px; margin: auto; }
+
+        .dashboard { 
+            max-width: 1280px; 
+            margin: 0 auto; 
+            padding: 40px 24px; 
+        }
         
         /* Header & Controls */
         .header-controls {
@@ -31,73 +60,259 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            margin-top: 20px;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
         }
-        h1 { margin: 0; font-size: 1.8em; }
+
+        h1 { 
+            margin: 0; 
+            font-family: var(--font-display);
+            font-size: 3.5em; 
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         .date-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .date-picker-container label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="date"] {
+            background-color: transparent;
+            color: var(--text-main);
+            border: none;
+            padding: 4px 8px;
+            color-scheme: dark;
+            font-family: var(--font-main);
+            font-weight: 500;
+            font-size: 1em;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* Typography */
+        h2 { 
+            font-size: 1.25em; 
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 40px 0 20px 0;
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        input[type="date"] {
-            background-color: var(--card-bg);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 5px;
-            color-scheme: dark;
-            font-family: inherit;
+        
+        h2::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 2px;
         }
 
         /* Tabs */
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tab-btn {
-            background-color: var(--card-bg);
-            color: var(--text-main);
+            gap: 12px;
+            margin-bottom: 32px;
+            background: var(--glass-bg);
+            padding: 6px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: background 0.2s;
+            width: fit-content;
+            backdrop-filter: blur(10px);
         }
-        .tab-btn:hover { background-color: #2a2a2a; }
+
+        .tab-btn {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            font-family: var(--font-main);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover { 
+            color: var(--text-main);
+        }
+
         .tab-btn.active {
             background-color: var(--accent);
-            border-color: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
-        .tab-content { display: none; }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
         .tab-content.active { display: block; }
 
-        h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 10px; font-size: 1.4em; }
-        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Grid & Cards */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .card.favorite { border: 1px solid var(--favorite-border); background-color: var(--favorite-bg); }
-        .team { display: flex; justify-content: space-between; margin: 10px 0; align-items: center; }
-        .team img { width: 30px; height: 30px; margin-right: 15px; object-fit: contain; }
-        .team-info { display: flex; align-items: center; font-weight: 500; }
-        .team-record { font-size: 0.85em; color: var(--text-muted); margin-left: 8px; font-weight: normal; }
-        .score { font-weight: bold; font-size: 1.3em; }
-        .status { font-size: 0.85em; color: var(--text-muted); text-align: center; margin-top: 10px; font-weight: 600; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 40px; 
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: #3b4b6b;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            background: var(--card-hover);
+        }
+
+        .card.favorite { 
+            background: var(--favorite-bg);
+            border: 1px solid var(--favorite-border); 
+        }
+        
+        .card.favorite::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--favorite-border);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .team { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 12px 0; 
+            align-items: center; 
+        }
+
+        .team img { 
+            width: 36px; 
+            height: 36px; 
+            margin-right: 16px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .team-info { 
+            display: flex; 
+            align-items: center; 
+            font-weight: 600; 
+            font-size: 1.05em;
+            letter-spacing: -0.2px;
+        }
+
+        .team-record { 
+            font-size: 0.75em; 
+            color: var(--text-dark); 
+            margin-left: 10px; 
+            font-weight: 500; 
+            letter-spacing: 0.5px;
+        }
+
+        .score { 
+            font-family: var(--font-display);
+            font-weight: 600; 
+            font-size: 2.2em; 
+            line-height: 1;
+        }
+
+        .status { 
+            font-size: 0.8em; 
+            color: var(--accent); 
+            text-align: right; 
+            margin-top: 12px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .meta-info { 
             display: flex; 
             justify-content: space-between; 
-            font-size: 0.8em; 
+            align-items: center;
+            font-size: 0.75em; 
             color: var(--text-muted); 
-            margin-top: 15px; 
+            margin-top: 16px; 
             border-top: 1px solid var(--border-color); 
-            padding-top: 10px;
+            padding-top: 16px;
+            font-weight: 600;
         }
-        .no-data { color: var(--text-muted); font-style: italic; }
+
+        .meta-info span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .no-data { 
+            color: var(--text-dark); 
+            font-weight: 500;
+            background: var(--glass-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px dashed var(--border-color);
+            text-align: center;
+            grid-column: 1 / -1;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: #262f3f; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b4b6b; }
     </style>
 </head>
 <body>
@@ -279,19 +494,13 @@
     }
 
     function startPolling() {
-        // Clear existing interval if date changes
         if (pollingInterval) clearInterval(pollingInterval);
-        
-        // Initial Fetch
         fetchScores(dateInput.value);
-        
-        // Poll every 60 seconds
         pollingInterval = setInterval(() => {
             fetchScores(dateInput.value);
         }, 60000);
     }
 
-    // Initialize application
     startPolling();
 </script>
 </body>
